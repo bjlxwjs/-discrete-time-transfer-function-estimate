@@ -1,12 +1,26 @@
+%% Copyright (C) 2009-2015   Lukas F. Reichlin
+%%
+%% This file is part of LTI Syncope.
+%%
+%% LTI Syncope is free software: you can redistribute it and/or modify
+%% it under the terms of the GNU General Public License as published by
+%% the Free Software Foundation, either version 3 of the License, or
+%% (at your option) any later version.
+%%
+%% LTI Syncope is distributed in the hope that it will be useful,
+%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%% GNU General Public License for more details.
+%%
+%% You should have received a copy of the GNU General Public License
+%% along with LTI Syncope.  If not, see <http://www.gnu.org/licenses/>.
 function [sys] = dttfe (dat, varargin)
 
   %% TODO: delays
   %% p: outputs,  m: inputs,  ex: experiments
   [~, p, m, ex] = size (dat);           % dataset dimensions
 
-%   if (is_real_scalar (varargin{1}))     % arx (dat, n, ...)
-     varargin = horzcat (varargin(2:end), {'na'}, varargin(1), {'nb'}, varargin(1));
-%   end
+  varargin = horzcat (varargin(2:end), {'na'}, varargin(1), {'nb'}, varargin(1));
 
   if (isstruct (varargin{1}))           % arx (dat, opt, ...), arx (dat, n, opt, ...)
     varargin = horzcat (opt2cell (varargin{1}), varargin(2:end));
@@ -33,23 +47,15 @@ function [sys] = dttfe (dat, varargin)
   end
 
   %% extract data  
-  %%读取数据并转换为cell格式
   Y = dat.y;
   Y=mat2cell(Y,(length(Y)));
   U = dat.u;
   U=mat2cell(U,(length(U)));
   tsam = dat.Ts;
-%   tsam=mat2cell(tsam,(length(tsam)));
 
-  %% multi-experiment data requires equal sampling times  
+  na = repmat (na, p, 1);                         % na(p-by-1)
+  nb = repmat (nb, p, m);                         % nb(p-by-m)
   
-   % tsam = tsam{1};
-
-  
-    na = repmat (na, p, 1);                         % na(p-by-1)
-    nb = repmat (nb, p, m);                         % nb(p-by-m)
-  
-
   max_nb = max (nb, [], 2);                         % one maximum for each row/output, max_nb(p-by-1)
   n = max (na, max_nb);                             % n(p-by-1)
 
@@ -82,41 +88,9 @@ function [sys] = dttfe (dat, varargin)
     A = [1; Theta(1:na(i))];                                % a0 = 1, a1 = Theta(1), an = Theta(n)
     ThetaB = Theta(na(i)+1:end);                            % all polynomials from B are in one column vector
     B=ThetaB;
-
-%     B = mat2cell (ThetaB, nb(i,:));                         % now separate the polynomials, one for each input
-%     B = reshape (B, 1, []);                                 % make B a row cell (1-by-m)
-%     B = cellfun (@(B) [zeros(1+nk, 1); B], B, 'uniformoutput', false);  % b0 = 0 (leading zero required by filt)
-%     B=cell2mat(B);
-    
-    %% add error inputs
-%     Be = repmat ({0}, 1, p);                                % there are as many error inputs as system outputs (p)
-%     Be(i) = [zeros(1,nk), 1];                               % inputs m+1:m+p are zero, except m+i which is one
-%     num(i, :) = [B, Be];                                    % numerator polynomials for output i, individual for each input
-%     den(i, :) = repmat ({A}, 1, m+p);                       % in a row (output i), all inputs have the same denominator polynomial
   end
 
-  %% A(q) y(t) = B(q) u(t) + e(t)
-  %% there is only one A per row
-  %% B(z) and A(z) are a Matrix Fraction Description (MFD)
-  %% y = A^-1(q) B(q) u(t) + A^-1(q) e(t)
-  %% since A(q) is a diagonal polynomial matrix, its inverse is trivial:
-  %% the corresponding transfer function has common row denominators.
     A=A';
     B=B';
   sys = tf (B, A, tsam);                              % filt creates a transfer function in z^-1
-
-  %% compute initial state vector x0 if requested
-  %% this makes only sense for state-space models, therefore convert TF to SS
-  
-%   if (nargout > 1)
-%     sys = prescale (ss (sys(:,1:m)));
-%     x0 = __sl_ib01cd__ (Y, U, sys.a, sys.b, sys.c, sys.d, 0.0);
-%     %% return x0 as vector for single-experiment data
-%     %% instead of a cell containing one vector
-%     if (numel (x0) == 1)
-%       x0 = x0{1};
-%     endif
-%     varargout{1} = x0;
-%   endif
-
 end
