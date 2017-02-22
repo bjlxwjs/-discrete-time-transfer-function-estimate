@@ -14,7 +14,9 @@
 %%
 %% You should have received a copy of the GNU General Public License
 %% along with LTI Syncope.  If not, see <http://www.gnu.org/licenses/>.
-function [sys] = dttfe (dat, varargin)
+
+
+function [sys] = arx (dat, varargin)
 
   %% TODO: delays
   %% p: outputs,  m: inputs,  ex: experiments
@@ -92,5 +94,5 @@ function [sys] = dttfe (dat, varargin)
 
     A=A';
     B=B';
-  sys = tf (B, A, tsam);                              % filt creates a transfer function in z^-1
+  sys = tf (B, A, tsam);                                   %  creates a transfer function in z^-1
 end
