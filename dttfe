@@ -1,0 +1,27 @@
+function [ sys ] = dttfe( y,u,Ts,n )
+
+%% toeplitz 对角线个元素相等的矩阵
+PhiY = toeplitz (y(1:end-1,1), [y(1, 1); zeros(n-1, 1)]);
+PhiU = toeplitz (u(1:end-1,1), [u(1, 1); zeros(n-1, 1)]);
+Phi = (horzcat (-PhiY, PhiU));
+Phi(1:n-1,:)=[];    
+A = horzcat (Phi, y(n+1:end, 1));               % [Phi, Y]
+R0 = triu (qr (A, 0));                          % 0 for economy-size R (without zero rows)
+R1 = R0(1:end-1, 1:end-1);                      % R1 is triangular - can we exploit this in R1\R2?
+R2 = R0(1:end-1, end);
+[U, S, V] = svd (R1, 0);                        % 0 for 'economy size' decomposition
+S = diag (S);                                   % extract main diagonl
+r = sum (S > eps*S(1));                         % eps= 2.2204e-16
+V = V(:, 1:r);
+S = S(1:r);
+U = U(:, 1:r);
+x = V * (S .\ (U' * R2));                       % U' is the conjugate transpose
+Theta = x;
+A = [1; Theta(1:n)];                           % a0 = 1, a1 = Theta(1), an = Theta(n)
+ThetaB = Theta(n+1:end);                       % all polynomials from B are in one column vector
+B=ThetaB;
+A=A';
+B=B';
+sys = tf (B, A, Ts);          
+
+end
