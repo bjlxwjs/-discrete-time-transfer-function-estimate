@@ -6,11 +6,11 @@ G1=tf(num,den,Ts);
 u=chirp(t,0,1,3);
 u=u';
 [y,t]=lsim(G1,u,t);
-data = iddata(y,u,Ts);
 
 % 4 is the order , can be get in  https://github.com/bjlxwjs/transfer-function-Order-Estimation
+n=4;
 
-sys=dttfe(data,4)
+sys=dttfe(y,u,Ts,n)
 
 
 
